@@ -2,6 +2,8 @@
 
 본 프로젝트는 애니메이션 **『공각기동대 STAND ALONE COMPLEX - be Human OST』** 음반 부록으로 수록된 **타치코마(Tachikoma) 페이퍼크래프트 전개도(2장)**를 분석하여, 조립이 완성된 형태의 3차원(3D) 다면체 메쉬 모델로 복원하고 웹 브라우저에서 직접 조작 및 다운로드할 수 있도록 구현한 프로젝트입니다.
 
+- 프로젝트: https://jaytwolab.github.io/tachikoma-paper-kr/
+
 ---
 
 ## 📁 프로젝트 파일 구성
