@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공각기동대 S.A.C. 타치코마 페이퍼크래프트 3D 모델</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Three.js & Exporters -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            color: #f8fafc;
+            user-select: none;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Warning Hazard Stripe matching the cutout sheet top/bottom borders */
+        .hazard-stripe {
+            background: repeating-linear-gradient(
+                -45deg,
+                #facc15,
+                #facc15 14px,
+                #18181b 14px,
+                #18181b 28px
+            );
+        }
+        /* Glassmorphism panel */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+        }
+        /* Floating 3D HTML Labels */
+        .part-label {
+            position: absolute;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s ease;
+            z-index: 10;
+        }
+        input[type=range] {
+            accent-color: #0284c7;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.4);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen relative flex flex-col justify-between">
+
+    <!-- Top Hazard Bar -->
+    <div class="w-full h-3 hazard-stripe z-30 shrink-0 shadow-md"></div>
+
+    <!-- 3D Viewport Container -->
+    <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+    <!-- 3D Floating Part Labels Container -->
+    <div id="labels-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+    <!-- Top Header & Part Filter Bar -->
+    <header class="relative z-20 flex flex-wrap items-center justify-between gap-3 px-4 py-3 m-3 rounded-xl glass-panel">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-sky-600 flex items-center justify-center font-black text-lg tracking-tighter shadow-inner border border-sky-400">
+                9과
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-400 text-slate-950 mono">OST "be Human"</span>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white">공각기동대 S.A.C. 타치코마 페이퍼크래프트 3D</h1>
+                </div>
+                <p class="text-xs text-sky-300/80">전개도(A·B·C·D 파츠) 기반 다면체 종이모형 조립 완성본</p>
+            </div>
+        </div>
+
+        <!-- Part Isolation / Highlight Filter Buttons -->
+        <div class="flex flex-wrap items-center gap-1.5" id="filter-buttons">
+            <button data-part="ALL" class="part-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-500 text-white shadow transition">
+                전체 보기
+            </button>
+            <button data-part="A" class="part-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-600/60 transition">
+                <span class="inline-block w-2 h-2 rounded-full bg-orange-400 mr-1"></span>A: 후방 포드
+            </button>
+            <button data-part="B" class="part-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-600/60 transition">
+                <span class="inline-block w-2 h-2 rounded-full bg-sky-400 mr-1"></span>B: 전면 동체·눈
+            </button>
+            <button data-part="C" class="part-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-600/60 transition">
+                <span class="inline-block w-2 h-2 rounded-full bg-indigo-400 mr-1"></span>C: 다리 (×4)
+            </button>
+            <button data-part="D" class="part-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-600/60 transition">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-1"></span>D: 양팔 (×2)
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Overlay Area (Left Controls + Right Download Panel) -->
+    <div class="relative z-20 flex-1 pointer-events-none flex flex-col md:flex-row justify-between items-end md:items-stretch p-3 gap-3 overflow-hidden">
+        
+        <!-- Left Panel: Assembly Controls & Guide -->
+        <div class="pointer-events-auto w-full md:w-80 glass-panel rounded-xl p-4 flex flex-col justify-between gap-4 self-end md:self-auto max-h-[48vh] md:max-h-full overflow-y-auto">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/80 pb-2">
+                    <h2 class="text-sm font-bold text-sky-400 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        조립 및 뷰어 컨트롤
+                    </h2>
+                    <button id="reset-cam-btn" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-600 transition">
+                        시점 초기화
+                    </button>
+                </div>
+
+                <!-- Exploded View Slider -->
+                <div class="space-y-1.5 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <label for="explode-slider" class="text-slate-200">전개도 분해 보기 (Exploded View)</label>
+                        <span id="explode-val" class="mono text-sky-400">0%</span>
+                    </div>
+                    <input id="explode-slider" type="range" min="0" max="100" value="0" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+                    <div class="flex justify-between text-[11px] text-slate-400 pt-0.5">
+                        <span>완성 상태</span>
+                        <span>파츠별 분리</span>
+                    </div>
+                </div>
+
+                <!-- Toggle Options -->
+                <div class="space-y-2.5 text-xs">
+                    <label class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/50 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                        <span class="font-medium text-slate-200">종이 접기선 표시 (산접기/골접기)</span>
+                        <input type="checkbox" id="toggle-edges" checked class="w-4 h-4 accent-sky-500 rounded cursor-pointer">
+                    </label>
+
+                    <label class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/50 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                        <span class="font-medium text-slate-200">부품 기호 라벨 표시 (A~D)</span>
+                        <input type="checkbox" id="toggle-labels" checked class="w-4 h-4 accent-sky-500 rounded cursor-pointer">
+                    </label>
+
+                    <label class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/50 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                        <span class="font-medium text-slate-200">구동 애니메이션 (아이들 모션)</span>
+                        <input type="checkbox" id="toggle-anim" checked class="w-4 h-4 accent-sky-500 rounded cursor-pointer">
+                    </label>
+                </div>
+
+                <!-- Cutout Blueprint Legend -->
+                <div class="space-y-2 pt-2 border-t border-slate-800 text-xs">
+                    <div class="font-bold text-slate-300">전개도 부품 구성 명세</div>
+                    <div class="space-y-1.5 text-slate-300/90 text-[11px] leading-relaxed">
+                        <div class="p-2 rounded bg-slate-900/70 border-l-2 border-orange-400">
+                            <strong class="text-white">A 파츠 (후방 포드):</strong> 수직 팔각 다면체 콕핏, 전면 주황색 경고등 4쌍, 좌·우·후방 은색 반구형 돔(A-1 ×2, A-2 ×1)
+                        </div>
+                        <div class="p-2 rounded bg-slate-900/70 border-l-2 border-sky-400">
+                            <strong class="text-white">B 파츠 (전면 동체):</strong> 6각 꽃무늬 전개 몸통, 하단 4구 관절 허브, 유탄발사기 포신(B-1), 상부 센서 마스트(B-2·3), 3구 안구 볼(B-4), 허리 조인트(B-5)
+                        </div>
+                        <div class="p-2 rounded bg-slate-900/70 border-l-2 border-indigo-400">
+                            <strong class="text-white">C 파츠 (다리 ×4):</strong> 곡선형 청색 다리 장갑, 하늘색 타원 내측 패드, 은색 휠 구비 발끝 포드
+                        </div>
+                        <div class="p-2 rounded bg-slate-900/70 border-l-2 border-emerald-400">
+                            <strong class="text-white">D 파츠 (양팔 ×2):</strong> 우완(右腕)·좌완(左腕) 은색 어깨 관절, 청색 팔뚝 장갑, 2지 집게발 그리퍼(先端)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                💡 <strong>조작 방법:</strong> 마우스 좌클릭 드래그(회전) · 우클릭 드래그(이동) · 휠 스크롤(확대/축소)
+            </div>
+        </div>
+
+        <!-- Right/Bottom Panel: 3D File Export & Download -->
+        <div class="pointer-events-auto w-full md:w-72 glass-panel rounded-xl p-4 flex flex-col justify-between gap-3 self-end">
+            <div class="space-y-2">
+                <h2 class="text-sm font-bold text-amber-400 flex items-center gap-1.5 border-b border-slate-700/80 pb-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    3D 모델 파일 다운로드
+                </h2>
+                <p class="text-[11px] text-slate-300 leading-normal">
+                    조립된 타치코마 3D 메쉬를 표준 3D 포맷으로 즉시 추출하여 블렌더(Blender), 3D 프린터 슬라이서, 웹 뷰어 등에서 사용할 수 있습니다.
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <button id="download-glb" class="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-sky-900/40 flex items-center justify-between transition transform active:scale-[0.98]">
+                    <span class="flex items-center gap-2">
+                        <span class="px-1.5 py-0.5 rounded bg-slate-950/40 mono text-[10px]">.GLB</span>
+                        <span>GLB 다운로드 (색상·재질 포함)</span>
+                    </span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </button>
+
+                <button id="download-obj" class="w-full py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs border border-slate-600 flex items-center justify-between transition transform active:scale-[0.98]">
+                    <span class="flex items-center gap-2">
+                        <span class="px-1.5 py-0.5 rounded bg-slate-950 mono text-sky-400 text-[10px]">.OBJ</span>
+                        <span>OBJ 다운로드 (범용 3D 메쉬)</span>
+                    </span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </button>
+
+                <button id="download-stl" class="w-full py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs border border-slate-600 flex items-center justify-between transition transform active:scale-[0.98]">
+                    <span class="flex items-center gap-2">
+                        <span class="px-1.5 py-0.5 rounded bg-slate-950 mono text-amber-400 text-[10px]">.STL</span>
+                        <span>STL 다운로드 (3D 프린팅용)</span>
+                    </span>
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </button>
+            </div>
+
+            <div id="export-status" class="text-[11px] text-center py-1 px-2 rounded bg-slate-900/90 text-emerald-400 font-medium hidden">
+                파일 생성 완료!
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Hazard Bar -->
+    <div class="w-full h-3 hazard-stripe z-30 shrink-0 shadow-md"></div>
+
+    <script>
+        // ============================================================================
+        // 1. SCENE, CAMERA, RENDERER INITIALIZATION
+        // ============================================================================
+        const container = document.getElementById('canvas-container');
+        const labelsContainer = document.getElementById('labels-container');
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b1120);
+        scene.fog = new THREE.FogExp2(0x0b1120, 0.018);
+
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
+        const defaultCamPos = new THREE.Vector3(9.5, 6.8, 11.5);
+        camera.position.copy(defaultCamPos);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.target.set(0, 2.3, -0.3);
+        controls.minDistance = 4;
+        controls.maxDistance = 32;
+        controls.maxPolarAngle = Math.PI / 2 + 0.05;
+
+        // ============================================================================
+        // 2. STUDIO LIGHTING & GROUND GRID
+        // ============================================================================
+        const ambientLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.85);
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
+        keyLight.position.set(12, 22, 16);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        keyLight.shadow.camera.near = 2;
+        keyLight.shadow.camera.far = 50;
+        const d = 10;
+        keyLight.shadow.camera.left = -d;
+        keyLight.shadow.camera.right = d;
+        keyLight.shadow.camera.top = d;
+        keyLight.shadow.camera.bottom = -d;
+        keyLight.shadow.bias = -0.0005;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
+        fillLight.position.set(-14, 8, -10);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xfacc15, 0.3);
+        rimLight.position.set(0, 15, -18);
+        scene.add(rimLight);
+
+        // Ground shadow receiver & technical turntable grid
+        const groundGeo = new THREE.CircleGeometry(18, 64);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color: 0x0f172a,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const gridHelper = new THREE.PolarGridHelper(12, 16, 8, 64, 0x1e3a8a, 0x1e293b);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        // ============================================================================
+        // 3. PAPERCRAFT MATERIALS & CREASE EDGE HELPER
+        // ============================================================================
+        // Authentic colors sampled from the "be Human" papercraft scan
+        const MATS = {
+            bluePaper: new THREE.MeshStandardMaterial({
+                name: 'Tachikoma_Blue_Paper',
+                color: 0x0068b7, // Classic Tachikoma cobalt blue cardstock
+                roughness: 0.62,
+                metalness: 0.08,
+                flatShading: true,
+                side: THREE.DoubleSide
+            }),
+            lightBluePad: new THREE.MeshStandardMaterial({
+                name: 'Tachikoma_LightBlue_InnerLeg',
+                color: 0x4ea8de, // Lighter blue oval patch on inner legs (Part C)
+                roughness: 0.65,
+                metalness: 0.05,
+                flatShading: true
+            }),
+            silverPaper: new THREE.MeshStandardMaterial({
+                name: 'Tachikoma_Silver_Print',
+                color: 0xd4d8dd, // Shaded grey/silver printed domes & joints
+                roughness: 0.45,
+                metalness: 0.38,
+                flatShading: true,
+                side: THREE.DoubleSide
+            }),
+            darkJoint: new THREE.MeshStandardMaterial({
+                name: 'Tachikoma_Dark_Metal',
+                color: 0x334155,
+                roughness: 0.5,
+                metalness: 0.4,
+                flatShading: true
+            }),
+            orangeLight: new THREE.MeshStandardMaterial({
+                name: 'Tachikoma_Orange_Indicator',
+                color: 0xff5500,
+                emissive: 0xff4500,
+                emissiveIntensity: 0.65,
+                roughness: 0.3,
+                flatShading: true
+            }),
+            whiteHighlight: new THREE.MeshStandardMaterial({
+                name: 'Tachikoma_Panel_Accent',
+                color: 0xe2e8f0,
+                roughness: 0.5,
+                flatShading: true
+            }),
+            blackDot: new THREE.MeshBasicMaterial({
+                name: 'Tachikoma_Sensor_Pinhole',
+                color: 0x090d16
+            })
+        };
+
+        const creaseLines = [];
+        const creaseMat = new THREE.LineBasicMaterial({
+            color: 0x93c5fd,
+            transparent: true,
+            opacity: 0.35
+        });
+
+        // Helper function to add papercraft fold lines (EdgesGeometry) to any mesh
+        function decoratePapercraftMesh(mesh, thresholdAngle = 12) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            const edgesGeo = new THREE.EdgesGeometry(mesh.geometry, thresholdAngle);
+            const line = new THREE.LineSegments(edgesGeo, creaseMat);
+            line.userData.isCreaseLine = true;
+            mesh.add(line);
+            creaseLines.push(line);
+            return mesh;
+        }
+
+        // Helper to build a faceted papercraft hemispherical dome (for A-1, A-2, B-4)
+        // Looking at the cutout sheet, the domes are 10-gon flower-petal paper domes
+        function createPaperDome(radius, hasThreeDots = false, hasSlotDetail = false) {
+            const domeGroup = new THREE.Group();
+            const geo = new THREE.SphereGeometry(radius, 10, 4, 0, Math.PI * 2, 0, Math.PI * 0.55);
+            const mesh = new THREE.Mesh(geo, MATS.silverPaper);
+            decoratePapercraftMesh(mesh, 10);
+            domeGroup.add(mesh);
+
+            // Base white mounting ring (representing the glue tabs/ring slot)
+            const ringGeo = new THREE.CylinderGeometry(radius * 0.98, radius * 1.02, radius * 0.12, 10);
+            const ring = new THREE.Mesh(ringGeo, MATS.whiteHighlight);
+            ring.position.y = 0.02;
+            domeGroup.add(ring);
+
+            // 3 pinhole dots arranged in a triangle on top of the dome (seen on B-4 and A-2)
+            if (hasThreeDots) {
+                const dotRadius = radius * 0.075;
+                const dotGeo = new THREE.CylinderGeometry(dotRadius, dotRadius, 0.04, 8);
+                const offsets = [
+                    [0, radius * 0.22],
+                    [-radius * 0.19, -radius * 0.12],
+                    [radius * 0.19, -radius * 0.12]
+                ];
+                offsets.forEach(([ox, oz]) => {
+                    const dot = new THREE.Mesh(dotGeo, MATS.blackDot);
+                    dot.position.set(ox, radius * 0.98, oz);
+                    domeGroup.add(dot);
+                });
+            }
+
+            // Horizontal mechanical detail line on A-1 side domes
+            if (hasSlotDetail) {
+                const barGeo = new THREE.BoxGeometry(radius * 1.1, 0.04, radius * 0.22);
+                const bar = new THREE.Mesh(barGeo, MATS.darkJoint);
+                bar.position.set(0, radius * 0.97, 0);
+                domeGroup.add(bar);
+            }
+
+            return domeGroup;
+        }
+
+        // ============================================================================
+        // 4. BUILD THE ASSEMBLED TACHIKOMA 3D MODEL (PARTS A, B, C, D)
+        // ============================================================================
+        // Root container for export & animation
+        const tachikomaRoot = new THREE.Group();
+        tachikomaRoot.name = "Tachikoma_Papercraft_Model";
+        scene.add(tachikomaRoot);
+
+        // Store exploded-view metadata & part groups
+        const assemblyParts = [];
+        function registerSubPart(group, code, titleKo, category, explodeOffset) {
+            group.name = `Part_${code}`;
+            group.userData = {
+                code,
+                titleKo,
+                category,
+                basePos: group.position.clone(),
+                explodeVec: explodeOffset.clone()
+            };
+            assemblyParts.push(group);
+        }
+
+        // ----------------------------------------------------------------------------
+        // PART A: REAR POD / COCKPIT (후방 포드 및 돔 A-1, A-2)
+        // ----------------------------------------------------------------------------
+        const groupPartA = new THREE.Group();
+        groupPartA.position.set(0, 3.25, -1.95);
+        tachikomaRoot.add(groupPartA);
+
+        // Main faceted octagonal box body folded from Sheet 1 (Part A)
+        const podPoints = [
+            new THREE.Vector2(0.01, -1.75),
+            new THREE.Vector2(1.15, -1.65),
+            new THREE.Vector2(1.62, -0.95),
+            new THREE.Vector2(1.68, 0.35),
+            new THREE.Vector2(1.42, 1.35),
+            new THREE.Vector2(0.85, 1.72),
+            new THREE.Vector2(0.01, 1.78)
+        ];
+        const podGeo = new THREE.LatheGeometry(podPoints, 8);
+        podGeo.rotateY(Math.PI / 8); // Align flat octagonal faces forward/sideways
+        podGeo.scale(0.95, 1.0, 0.88);
+        const podMesh = new THREE.Mesh(podGeo, MATS.bluePaper);
+        decoratePapercraftMesh(podMesh, 8);
+        groupPartA.add(podMesh);
+
+        // Top cockpit hatch lid detail (engraved arch & latch slots on Part A)
+        const hatchGeo = new THREE.CylinderGeometry(0.95, 1.15, 0.12, 8);
+        hatchGeo.rotateY(Math.PI / 8);
+        const hatchMesh = new THREE.Mesh(hatchGeo, MATS.bluePaper);
+        hatchMesh.position.set(0, 1.72, 0);
+        decoratePapercraftMesh(hatchMesh, 10);
+        groupPartA.add(hatchMesh);
+
+        // 4 pairs of glowing orange warning lights on the front upper & lower edges of Part A
+        const lightPositions = [
+            [-0.78, 0.92, 1.32],
+            [ 0.78, 0.92, 1.32],
+            [-0.78, -0.55, 1.35],
+            [ 0.78, -0.55, 1.35]
+        ];
+        lightPositions.forEach(([lx, ly, lz]) => {
+            const pairGroup = new THREE.Group();
+            pairGroup.position.set(lx, ly, lz);
+            pairGroup.rotation.x = 0.15;
+
+            // White streak/housing
+            const streakGeo = new THREE.ConeGeometry(0.09, 0.38, 6);
+            const streak = new THREE.Mesh(streakGeo, MATS.whiteHighlight);
+            pairGroup.add(streak);
+
+            // Big + small orange warning lamps
+            const bigLamp = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), MATS.orangeLight);
+            bigLamp.position.set(0, -0.02, 0.06);
+            const smallLamp = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), MATS.orangeLight);
+            smallLamp.position.set(0, -0.18, 0.06);
+            pairGroup.add(bigLamp, smallLamp);
+
+            groupPartA.add(pairGroup);
+        });
+
+        // Part A-1 (Left & Right hemispherical sensor domes on the Rear Pod)
+        const domeA1_Left = createPaperDome(0.68, false, true);
+        domeA1_Left.position.set(-1.52, -0.05, 0);
+        domeA1_Left.rotation.z = Math.PI / 2;
+        groupPartA.add(domeA1_Left);
+        registerSubPart(domeA1_Left, "A-1(L)", "좌측면 돔 센서", "A", new THREE.Vector3(-1.6, 0, 0));
+
+        const domeA1_Right = createPaperDome(0.68, false, true);
+        domeA1_Right.position.set(1.52, -0.05, 0);
+        domeA1_Right.rotation.z = -Math.PI / 2;
+        groupPartA.add(domeA1_Right);
+        registerSubPart(domeA1_Right, "A-1(R)", "우측면 돔 센서", "A", new THREE.Vector3(1.6, 0, 0));
+
+        // Part A-2 (Rear hemispherical dome with 3 pinhole dots)
+        const domeA2_Rear = createPaperDome(0.72, true, false);
+        domeA2_Rear.position.set(0, -0.12, -1.42);
+        domeA2_Rear.rotation.x = -Math.PI / 2;
+        groupPartA.add(domeA2_Rear);
+        registerSubPart(domeA2_Rear, "A-2", "후방 돔 센서", "A", new THREE.Vector3(0, 0, -1.7));
+
+        registerSubPart(groupPartA, "A", "후방 콕핏 포드 (본체)", "A", new THREE.Vector3(0, 0.8, -2.4));
+
+        // ----------------------------------------------------------------------------
+        // PART B: FRONT BODY / THORAX & SUBPARTS (B, B-1, B-2, B-3, B-4, B-5)
+        // ----------------------------------------------------------------------------
+        const groupPartB = new THREE.Group();
+        groupPartB.position.set(0, 1.95, 0.65);
+        tachikomaRoot.add(groupPartB);
+
+        // Main 6-petal folded central body (Part B on Sheet 2)
+        const bodyPoints = [
+            new THREE.Vector2(0.01, -0.92),
+            new THREE.Vector2(0.95, -0.88),
+            new THREE.Vector2(1.48, -0.35),
+            new THREE.Vector2(1.52, 0.28),
+            new THREE.Vector2(1.12, 0.82),
+            new THREE.Vector2(0.45, 0.98),
+            new THREE.Vector2(0.01, 1.00)
+        ];
+        const thoraxGeo = new THREE.LatheGeometry(bodyPoints, 6);
+        thoraxGeo.rotateY(Math.PI / 6);
+        thoraxGeo.scale(1.05, 0.92, 1.12);
+        const thoraxMesh = new THREE.Mesh(thoraxGeo, MATS.bluePaper);
+        decoratePapercraftMesh(thoraxMesh, 10);
+        groupPartB.add(thoraxMesh);
+
+        // Bottom silver 4-socket leg hub printed on the center of Part B
+        const hubGroup = new THREE.Group();
+        hubGroup.position.set(0, -0.85, 0);
+        const centerHubGeo = new THREE.CylinderGeometry(0.62, 0.52, 0.28, 12);
+        const centerHub = new THREE.Mesh(centerHubGeo, MATS.silverPaper);
+        decoratePapercraftMesh(centerHub, 15);
+        hubGroup.add(centerHub);
+
+        const socketAngles = [Math.PI * 0.25, Math.PI * 0.75, -Math.PI * 0.75, -Math.PI * 0.25];
+        socketAngles.forEach(ang => {
+            const prongGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.75, 8);
+            prongGeo.rotateZ(Math.PI / 2);
+            const prong = new THREE.Mesh(prongGeo, MATS.silverPaper);
+            prong.position.set(Math.cos(ang) * 0.55, 0.05, Math.sin(ang) * 0.55);
+            prong.rotation.y = -ang;
+            decoratePapercraftMesh(prong, 15);
+            hubGroup.add(prong);
+        });
+        groupPartB.add(hubGroup);
+
+        // Part B-5: Curved blue waist collar connecting Part B to Part A
+        const partB5 = new THREE.Group();
+        partB5.position.set(0, 0.15, -1.25);
+        const collarGeo = new THREE.CylinderGeometry(0.85, 0.95, 0.75, 8, 1, false);
+        collarGeo.rotateX(Math.PI / 2 - 0.25);
+        const collarMesh = new THREE.Mesh(collarGeo, MATS.bluePaper);
+        decoratePapercraftMesh(collarMesh, 12);
+        partB5.add(collarMesh);
+        groupPartB.add(partB5);
+        registerSubPart(partB5, "B-5", "허리 연결 조인트", "B", new THREE.Vector3(0, -0.4, -0.9));
+
+        // Part B-1: Front Silver Grenade Launcher / Cannon Muzzle + Top Sight
+        const partB1 = new THREE.Group();
+        partB1.position.set(0, -0.18, 1.62);
+        const barrelGeo = new THREE.CylinderGeometry(0.28, 0.32, 0.65, 10);
+        barrelGeo.rotateX(Math.PI / 2);
+        const barrelMesh = new THREE.Mesh(barrelGeo, MATS.silverPaper);
+        decoratePapercraftMesh(barrelMesh, 12);
+        partB1.add(barrelMesh);
+
+        // Inner dark bore
+        const boreGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.67, 10);
+        boreGeo.rotateX(Math.PI / 2);
+        const boreMesh = new THREE.Mesh(boreGeo, MATS.blackDot);
+        partB1.add(boreMesh);
+
+        // Top circular sight tab on B-1
+        const sightGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 10);
+        sightGeo.rotateY(Math.PI / 2);
+        const sightMesh = new THREE.Mesh(sightGeo, MATS.silverPaper);
+        sightMesh.position.set(0, 0.34, 0.1);
+        decoratePapercraftMesh(sightMesh, 12);
+        partB1.add(sightMesh);
+
+        groupPartB.add(partB1);
+        registerSubPart(partB1, "B-1", "전면 유탄발사기 포구", "B", new THREE.Vector3(0, -0.2, 1.5));
+
+        // Part B-2 & B-3: Top Turret Crown & Rectangular Sensor Mast
+        const partB2_B3 = new THREE.Group();
+        partB2_B3.position.set(0, 0.96, -0.05);
+
+        // B-3: Crown collar base
+        const crownGeo = new THREE.CylinderGeometry(0.32, 0.36, 0.25, 8);
+        const crownMesh = new THREE.Mesh(crownGeo, MATS.bluePaper);
+        decoratePapercraftMesh(crownMesh, 12);
+        partB2_B3.add(crownMesh);
+
+        // B-2: Rectangular folded sensor mast
+        const mastGeo = new THREE.BoxGeometry(0.22, 0.72, 0.22);
+        const mastMesh = new THREE.Mesh(mastGeo, MATS.bluePaper);
+        mastMesh.position.set(0, 0.42, 0);
+        decoratePapercraftMesh(mastMesh, 12);
+        partB2_B3.add(mastMesh);
+
+        groupPartB.add(partB2_B3);
+        registerSubPart(partB2_B3, "B-2·3", "상부 센서 마스트", "B", new THREE.Vector3(0, 1.4, 0));
+
+        // Part B-4: Three Silver Hemispherical Eyeballs with 3 Pinhole Dots each
+        const eyePositions = [
+            { code: "B-4(전면우)", pos: new THREE.Vector3(-0.78, 0.22, 1.18), rot: new THREE.Euler(0.42, 0, 0.48), exp: new THREE.Vector3(-0.9, 0.5, 1.1) },
+            { code: "B-4(전면좌)", pos: new THREE.Vector3( 0.78, 0.22, 1.18), rot: new THREE.Euler(0.42, 0, -0.48), exp: new THREE.Vector3( 0.9, 0.5, 1.1) },
+            { code: "B-4(상부)",   pos: new THREE.Vector3( 0.0,  0.52, -0.82), rot: new THREE.Euler(-0.55, 0, 0),    exp: new THREE.Vector3( 0.0, 1.1, -0.8) }
+        ];
+        const eyeGroups = [];
+        eyePositions.forEach((cfg) => {
+            const eye = createPaperDome(0.36, true, false);
+            eye.position.copy(cfg.pos);
+            eye.rotation.copy(cfg.rot);
+            groupPartB.add(eye);
+            eyeGroups.push(eye);
+            registerSubPart(eye, cfg.code, "3구 광학 안구 센서", "B", cfg.exp);
+        });
+
+        registerSubPart(groupPartB, "B", "전면 중앙 동체", "B", new THREE.Vector3(0, 0.2, 1.2));
+
+        // ----------------------------------------------------------------------------
+        // PART C: 4 ARTICULATED LEGS (C 脚 ×4)
+        // ----------------------------------------------------------------------------
+        function createPapercraftLeg(index, hipX, hipZ, yawAngle, labelCode, titleKo) {
+            const legGroup = new THREE.Group();
+            legGroup.position.set(hipX, 1.25, hipZ);
+            legGroup.rotation.y = yawAngle;
+
+            // Upper spherical shoulder cap (top rounded section of Part C cutout)
+            const thighGroup = new THREE.Group();
+            const capGeo = new THREE.SphereGeometry(0.54, 8, 6);
+            capGeo.scale(0.82, 1.05, 0.95);
+            const capMesh = new THREE.Mesh(capGeo, MATS.bluePaper);
+            capMesh.position.set(0.35, 0.35, 0);
+            decoratePapercraftMesh(capMesh, 12);
+            thighGroup.add(capMesh);
+
+            // Curved tapered faceted leg shell (folded along the two curved dashed lines on Part C)
+            const legSegments = 8;
+            const legHeight = 2.05;
+            const legGeo = new THREE.CylinderGeometry(0.46, 0.22, legHeight, 6, legSegments);
+            const posAttr = legGeo.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                const py = posAttr.getY(i); // ranges from -legHeight/2 to +legHeight/2
+                const t = (py + legHeight / 2) / legHeight; // 0 (bottom ankle) to 1 (top knee)
+                // Arch outward in the middle like the Tachikoma leg silhouette
+                const archOffset = Math.sin(t * Math.PI) * 0.36 + (1 - t) * 0.25;
+                posAttr.setX(i, posAttr.getX(i) + archOffset);
+            }
+            legGeo.computeVertexNormals();
+
+            const legShell = new THREE.Mesh(legGeo, MATS.bluePaper);
+            legShell.position.set(0.68, -0.35, 0);
+            legShell.rotation.z = 0.18;
+            decoratePapercraftMesh(legShell, 10);
+            thighGroup.add(legShell);
+
+            // Light-blue oval inner panel printed on the center of Part C
+            const innerPadGeo = new THREE.CylinderGeometry(0.30, 0.16, legHeight * 0.78, 6, 6);
+            const padPos = innerPadGeo.attributes.position;
+            for (let i = 0; i < padPos.count; i++) {
+                const py = padPos.getY(i);
+                const t = (py + (legHeight * 0.78) / 2) / (legHeight * 0.78);
+                const archOffset = Math.sin(t * Math.PI) * 0.30 + (1 - t) * 0.18;
+                padPos.setX(i, padPos.getX(i) + archOffset - 0.14);
+            }
+            innerPadGeo.computeVertexNormals();
+            const innerPad = new THREE.Mesh(innerPadGeo, MATS.lightBluePad);
+            innerPad.position.set(0.62, -0.36, 0);
+            innerPad.rotation.z = 0.18;
+            thighGroup.add(innerPad);
+
+            // Silver mechanical ankle & wheeled foot pod at the bottom tip of Part C
+            const footGroup = new THREE.Group();
+            footGroup.position.set(1.08, -1.12, 0);
+
+            const ankleGeo = new THREE.ConeGeometry(0.28, 0.42, 6);
+            ankleGeo.rotateX(Math.PI);
+            const ankleMesh = new THREE.Mesh(ankleGeo, MATS.silverPaper);
+            ankleMesh.position.y = 0.12;
+            decoratePapercraftMesh(ankleMesh, 12);
+            footGroup.add(ankleMesh);
+
+            // 3 sensor dots on the silver ankle collar (visible in Part C cutout)
+            const fDotGeo = new THREE.SphereGeometry(0.035, 6, 6);
+            [[-0.08, 0.18, 0.18], [0.08, 0.18, 0.18], [0, 0.25, 0.19]].forEach(([dx, dy, dz]) => {
+                const d = new THREE.Mesh(fDotGeo, MATS.blackDot);
+                d.position.set(dx, dy, dz);
+                footGroup.add(d);
+            });
+
+            // Dark tire wheel inside the foot pod
+            const wheelGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.18, 12);
+            wheelGeo.rotateX(Math.PI / 2);
+            const wheelMesh = new THREE.Mesh(wheelGeo, MATS.darkJoint);
+            wheelMesh.position.y = -0.02;
+            decoratePapercraftMesh(wheelMesh, 15);
+            footGroup.add(wheelMesh);
+
+            thighGroup.add(footGroup);
+            legGroup.add(thighGroup);
+
+            const expDir = new THREE.Vector3(Math.cos(yawAngle) * 2.2, -0.6, -Math.sin(yawAngle) * 2.2);
+            registerSubPart(legGroup, labelCode, titleKo, "C", expDir);
+            return legGroup;
+        }
+
+        const legs = [
+            createPapercraftLeg(0,  0.85,  1.25, -Math.PI * 0.22, "C-1", "우측 전방 다리"),
+            createPapercraftLeg(1, -0.85,  1.25, -Math.PI * 0.78, "C-2", "좌측 전방 다리"),
+            createPapercraftLeg(2, -0.92, -0.25,  Math.PI * 0.75, "C-3", "좌측 후방 다리"),
+            createPapercraftLeg(3,  0.92, -0.25,  Math.PI * 0.25, "C-4", "우측 후방 다리")
+        ];
+        legs.forEach(l => tachikomaRoot.add(l));
+
+        // ----------------------------------------------------------------------------
+        // PART D: RIGHT & LEFT MANIPULATOR ARMS (D 右腕・左腕 & 先端)
+        // ----------------------------------------------------------------------------
+        function createPapercraftArm(isRight) {
+            const sideSign = isRight ? -1 : 1; // In Tachikoma's own perspective, Right arm is -X, Left arm is +X
+            const armGroup = new THREE.Group();
+            armGroup.position.set(sideSign * 0.92, 1.68, 1.85);
+            armGroup.rotation.y = sideSign * 0.18;
+            armGroup.rotation.x = 0.12;
+
+            // Silver rounded shoulder segment (top half of D 右腕 / 左腕 cutout)
+            const shoulderGeo = new THREE.SphereGeometry(0.32, 8, 6);
+            shoulderGeo.scale(0.88, 0.88, 1.25);
+            const shoulderMesh = new THREE.Mesh(shoulderGeo, MATS.silverPaper);
+            decoratePapercraftMesh(shoulderMesh, 12);
+            armGroup.add(shoulderMesh);
+
+            // Blue cylindrical forearm armor (middle blue band of Part D cutout)
+            const forearmGeo = new THREE.CylinderGeometry(0.30, 0.25, 0.72, 8);
+            forearmGeo.rotateX(Math.PI / 2);
+            const forearmMesh = new THREE.Mesh(forearmGeo, MATS.bluePaper);
+            forearmMesh.position.set(0, -0.04, 0.55);
+            decoratePapercraftMesh(forearmMesh, 12);
+            armGroup.add(forearmMesh);
+
+            // Right Arm specific side cylinder protrusion (visible on D 右腕 left tab on Sheet 1)
+            if (isRight) {
+                const sidePodGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.38, 8);
+                sidePodGeo.rotateX(Math.PI / 2);
+                const sidePod = new THREE.Mesh(sidePodGeo, MATS.silverPaper);
+                sidePod.position.set(-0.32, -0.04, 0.52);
+                decoratePapercraftMesh(sidePod, 12);
+                armGroup.add(sidePod);
+            }
+
+            // Silver wrist collar (D 先端 fan-shaped silver cone wrap)
+            const wristGeo = new THREE.ConeGeometry(0.25, 0.28, 8);
+            wristGeo.rotateX(Math.PI / 2);
+            const wristMesh = new THREE.Mesh(wristGeo, MATS.silverPaper);
+            wristMesh.position.set(0, -0.05, 0.98);
+            decoratePapercraftMesh(wristMesh, 12);
+            armGroup.add(wristMesh);
+
+            // Two-pronged silver pincer claws (bottom prongs of D 右腕 / 左腕)
+            const clawGroup = new THREE.Group();
+            clawGroup.position.set(0, -0.05, 1.08);
+
+            [-1, 1].forEach(prongDir => {
+                const prong = new THREE.Group();
+                const seg1Geo = new THREE.BoxGeometry(0.08, 0.14, 0.32);
+                const seg1 = new THREE.Mesh(seg1Geo, MATS.silverPaper);
+                seg1.position.set(prongDir * 0.11, 0, 0.14);
+                seg1.rotation.y = -prongDir * 0.22;
+                decoratePapercraftMesh(seg1, 12);
+
+                const seg2Geo = new THREE.BoxGeometry(0.07, 0.12, 0.22);
+                const seg2 = new THREE.Mesh(seg2Geo, MATS.silverPaper);
+                seg2.position.set(prongDir * 0.09, 0, 0.35);
+                seg2.rotation.y = prongDir * 0.38;
+                decoratePapercraftMesh(seg2, 12);
+
+                prong.add(seg1, seg2);
+                clawGroup.add(prong);
+            });
+
+            armGroup.add(clawGroup);
+
+            const code = isRight ? "D(우완)" : "D(좌완)";
+            const title = isRight ? "우완 매니퓰레이터 (右腕)" : "좌완 매니퓰레이터 (左腕)";
+            registerSubPart(armGroup, code, title, "D", new THREE.Vector3(sideSign * 1.4, -0.2, 1.8));
+            return armGroup;
+        }
+
+        const rightArm = createPapercraftArm(true);
+        const leftArm = createPapercraftArm(false);
+        tachikomaRoot.add(rightArm, leftArm);
+
+        // ============================================================================
+        // 5. FLOATING 3D HTML LABELS FOR EXPLODED / ASSEMBLY VIEW
+        // ============================================================================
+        const labelElements = [];
+        const categoryBadgeColor = {
+            'A': 'bg-orange-500 text-slate-950 border-orange-300',
+            'B': 'bg-sky-500 text-slate-950 border-sky-300',
+            'C': 'bg-indigo-500 text-white border-indigo-300',
+            'D': 'bg-emerald-500 text-slate-950 border-emerald-300'
+        };
+
+        assemblyParts.forEach(part => {
+            const el = document.createElement('div');
+            el.className = 'part-label flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-md border backdrop-blur-sm bg-slate-900/85 text-white border-slate-600';
+            const badgeClass = categoryBadgeColor[part.userData.category] || 'bg-sky-500 text-black';
+            el.innerHTML = `<span class="px-1.5 py-0.2 rounded-full text-[10px] mono font-extrabold ${badgeClass}">${part.userData.code}</span><span class="hidden sm:inline pr-1 text-[10px] text-slate-200">${part.userData.titleKo}</span>`;
+            labelsContainer.appendChild(el);
+            labelElements.push({ part, el });
+        });
+
+        let showLabels = true;
+        let activeCategory = 'ALL';
+        let currentExplodeRatio = 0;
+
+        function updateLabelsProjection() {
+            if (!showLabels) {
+                labelElements.forEach(({ el }) => el.style.opacity = '0');
+                return;
+            }
+
+            const tempV = new THREE.Vector3();
+            labelElements.forEach(({ part, el }) => {
+                // Only show sub-labels when exploded > 10% or for main parts A, B, C-1, D
+                const isPrimaryPart = ['A', 'B', 'C-1', 'D(우완)', 'B-1', 'A-2'].includes(part.userData.code);
+                const categoryMatch = (activeCategory === 'ALL' || part.userData.category === activeCategory);
+
+                if (!categoryMatch || (currentExplodeRatio < 0.12 && !isPrimaryPart)) {
+                    el.style.opacity = '0';
+                    return;
+                }
+
+                part.getWorldPosition(tempV);
+                tempV.y += 0.35;
+                tempV.project(camera);
+
+                if (tempV.z > 1) {
+                    el.style.opacity = '0';
+                    return;
+                }
+
+                const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(tempV.y * 0.5) + 0.5) * window.innerHeight;
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.style.opacity = '0.92';
+            });
+        }
+
+        // ============================================================================
+        // 6. INTERACTIVE UI EVENT HANDLERS (EXPLODE, FILTER, EDGES, ANIMATION)
+        // ============================================================================
+        const explodeSlider = document.getElementById('explode-slider');
+        const explodeValText = document.getElementById('explode-val');
+
+        function applyExplodedView(ratio) {
+            currentExplodeRatio = ratio;
+            assemblyParts.forEach(part => {
+                const { basePos, explodeVec } = part.userData;
+                part.position.copy(basePos).addScaledVector(explodeVec, ratio);
+            });
+        }
+
+        explodeSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            explodeValText.textContent = `${val}%`;
+            applyExplodedView(val / 100);
+        });
+
+        // Crease Edges Toggle
+        document.getElementById('toggle-edges').addEventListener('change', (e) => {
+            const visible = e.target.checked;
+            creaseLines.forEach(line => line.visible = visible);
+        });
+
+        // Labels Toggle
+        document.getElementById('toggle-labels').addEventListener('change', (e) => {
+            showLabels = e.target.checked;
+        });
+
+        // Idle Animation Toggle
+        let idleAnimationEnabled = true;
+        document.getElementById('toggle-anim').addEventListener('change', (e) => {
+            idleAnimationEnabled = e.target.checked;
+            if (!idleAnimationEnabled) {
+                tachikomaRoot.position.y = 0;
+                tachikomaRoot.rotation.z = 0;
+            }
+        });
+
+        // Reset Camera Button
+        document.getElementById('reset-cam-btn').addEventListener('click', () => {
+            camera.position.copy(defaultCamPos);
+            controls.target.set(0, 2.3, -0.3);
+            controls.update();
+        });
+
+        // Part Category Isolation Buttons
+        const partBtns = document.querySelectorAll('.part-btn');
+        partBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeCategory = btn.getAttribute('data-part');
+                partBtns.forEach(b => {
+                    b.classList.remove('bg-sky-500', 'text-white');
+                    b.classList.add('bg-slate-800/90', 'text-slate-200');
+                });
+                btn.classList.remove('bg-slate-800/90', 'text-slate-200');
+                btn.classList.add('bg-sky-500', 'text-white');
+
+                assemblyParts.forEach(part => {
+                    const isMatch = (activeCategory === 'ALL' || part.userData.category === activeCategory);
+                    part.visible = isMatch;
+                });
+            });
+        });
+
+        // ============================================================================
+        // 7. CLIENT-SIDE 3D MODEL EXPORT (.GLB, .OBJ, .STL)
+        // ============================================================================
+        const statusBanner = document.getElementById('export-status');
+        function showExportStatus(msg) {
+            statusBanner.textContent = msg;
+            statusBanner.classList.remove('hidden');
+            setTimeout(() => {
+                statusBanner.classList.add('hidden');
+            }, 3500);
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 200);
+        }
+
+        // Prepare clean mesh clone without LineSegments helper before exporting
+        function buildExportableMeshGroup() {
+            const prevRatio = currentExplodeRatio;
+            // Temporarily snap to assembled pose for clean 3D model export if not intentionally exploded
+            const clone = tachikomaRoot.clone(true);
+            const toRemove = [];
+            clone.traverse(child => {
+                child.visible = true;
+                if (child.isLine || child.userData.isCreaseLine) {
+                    toRemove.push(child);
+                }
+            });
+            toRemove.forEach(c => {
+                if (c.parent) c.parent.remove(c);
+            });
+            return { clone, prevRatio };
+        }
+
+        // 1) GLB Export
+        document.getElementById('download-glb').addEventListener('click', () => {
+            showExportStatus('GLB 3D 모델 생성 중...');
+            const { clone } = buildExportableMeshGroup();
+            const exporter = new THREE.GLTFExporter();
+            exporter.parse(
+                clone,
+                (result) => {
+                    const blob = new Blob([result], { type: 'model/gltf-binary' });
+                    triggerDownload(blob, 'Tachikoma_Papercraft_SAC.glb');
+                    showExportStatus('✔ Tachikoma_Papercraft_SAC.glb 다운로드 완료!');
+                },
+                { binary: true }
+            );
+        });
+
+        // 2) OBJ Export
+        document.getElementById('download-obj').addEventListener('click', () => {
+            showExportStatus('OBJ 메쉬 파일 생성 중...');
+            const { clone } = buildExportableMeshGroup();
+            const exporter = new THREE.OBJExporter();
+            const objText = exporter.parse(clone);
+            const blob = new Blob([objText], { type: 'text/plain;charset=utf-8' });
+            triggerDownload(blob, 'Tachikoma_Papercraft_SAC.obj');
+            showExportStatus('✔ Tachikoma_Papercraft_SAC.obj 다운로드 완료!');
+        });
+
+        // 3) STL Export
+        document.getElementById('download-stl').addEventListener('click', () => {
+            showExportStatus('STL 3D 프린팅 파일 생성 중...');
+            const { clone } = buildExportableMeshGroup();
+            const exporter = new THREE.STLExporter();
+            const stlData = exporter.parse(clone, { binary: true });
+            const blob = new Blob([stlData], { type: 'application/octet-stream' });
+            triggerDownload(blob, 'Tachikoma_Papercraft_SAC.stl');
+            showExportStatus('✔ Tachikoma_Papercraft_SAC.stl 다운로드 완료!');
+        });
+
+        // ============================================================================
+        // 8. ANIMATION LOOP & RESPONSIVE RESIZE
+        // ============================================================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+
+            if (idleAnimationEnabled && currentExplodeRatio === 0) {
+                // Subtle Tachikoma breathing suspension bounce
+                tachikomaRoot.position.y = Math.sin(t * 2.4) * 0.045;
+                // Curious eye scanning rotation
+                eyeGroups.forEach((eye, idx) => {
+                    eye.rotation.z += Math.sin(t * 3.0 + idx * 1.7) * 0.0025;
+                });
+                // Subtle manipulator claw wave
+                rightArm.rotation.x = 0.12 + Math.sin(t * 2.2) * 0.06;
+                leftArm.rotation.x = 0.12 - Math.sin(t * 2.2) * 0.06;
+            }
+
+            controls.update();
+            updateLabelsProjection();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = function () {
+            animate();
+        };
+    </script>
+</body>
+</html>
